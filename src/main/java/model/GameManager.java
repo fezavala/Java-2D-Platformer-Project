@@ -8,23 +8,25 @@ import util.Vector2D;
 
 import java.util.HashMap;
 
-// Stores the games state, referenced and controlled by the Controller classes
+// Manages and stores the games state, referenced and controlled by the Controller classes
 public class GameManager implements EventListener {
 
-    private static final int LEVEL_AMOUNT = 2;
+    private static final int LEVEL_AMOUNT = 5;
     private static final int TILE_SIZE = 32;
 
     private final Player player;
     private TileMap tileMap;
 
+    // Input listener for menu inputs
     private final MenuInputListener menuInputListener = new MenuInputListener();
 
-    private GameState gameState = GameState.IN_LEVEL;
+    private GameState gameState = GameState.MAIN_MENU;
 
+    // HashMap that stores the save data for the game, saved after each level is beat
     private final HashMap<Integer, HashMap<LevelData, Double>> levelSaveData = new HashMap<>(LEVEL_AMOUNT);
 
     // Level tracking variables
-    private int currentLevel = 1;
+    private int currentLevel = 0;
     private int levelCollectedCollectibles = 0;
     private double previousTime = 0.0;
     private boolean startTimer = true;
@@ -41,11 +43,10 @@ public class GameManager implements EventListener {
     public GameManager() {
         Vector2D playerPosition = new Vector2D();
         this.player = new Player(this, playerPosition);
-        this.tileMap = new TileMap(String.valueOf(currentLevel - 1), TILE_SIZE);
         loadLevelSaveData();
     }
 
-    // NOTE: This works!
+    // Takes a JSONObject from the GameLoader to load level save data
     private void loadLevelSaveData() {
         JSONObject levelSaveData = GameLoader.loadSaveData();
         if (levelSaveData != null) {
@@ -84,7 +85,7 @@ public class GameManager implements EventListener {
     }
 
     private void changeLevel() {
-        player.worldPosition = new Vector2D();
+        player.resetPlayer(new Vector2D());
         if (currentLevel == LEVEL_AMOUNT) {
             System.out.println("No More levels left :(");
             System.out.println("Back to the beginning");
@@ -101,7 +102,6 @@ public class GameManager implements EventListener {
         tileMap.resetTileMap();
     }
 
-    // This may be removed
     private void loadLevel() {
         levelCollectedCollectibles = 0;
         startTimer = true;
@@ -121,17 +121,21 @@ public class GameManager implements EventListener {
         previousTime = currentTime;
     }
 
+    // Main menu state
     private void menuState() {
-        //TODO: Implement this state
-        gameState = GameState.LEVEL_TRANSITION;
-        transitionState();
+        if (menuInputListener.isSpacePressed()) {
+            gameState = GameState.LEVEL_TRANSITION;
+            transitionState();
+        }
     }
 
+    // In game state
     private void inLevelState() {
         player.move(tileMap);
         updateLevelTimer();
     }
 
+    // Transition state for animation
     private void transitionState() {
         currentTransitionTime += TRANSITION_RATE;
         if (currentTransitionTime >= TRANSITION_TIME) {
@@ -141,6 +145,7 @@ public class GameManager implements EventListener {
         }
     }
 
+    // level finish state that awaits input to change or reset level
     private void levelFinishedState() {
         if (menuInputListener.isBackspacePressed()) {
             // Reset the level to try again
@@ -184,6 +189,8 @@ public class GameManager implements EventListener {
     public Vector2D getPlayerWorldPosition() {
         return player.getWorldPosition();
     }
+
+    // Public getters for the game state, used mainly by the GamePanel
 
     public PlayerState getPlayerState() { return player.getCurrentPlayerState(); }
 
@@ -233,6 +240,10 @@ public class GameManager implements EventListener {
         return currentLevel;
     }
 
+    public boolean getTileMapActive() {
+        return tileMap != null;
+    }
+
     @Override
     public void processEvent(GameEvent gameEvent) {
         // Put event processing here
@@ -250,7 +261,7 @@ public class GameManager implements EventListener {
         }
     }
 
-
+    // Enums for the level save data hash map
     private enum LevelData {
         COLLECTIBLES, TIME;
 

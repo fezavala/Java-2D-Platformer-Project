@@ -1,11 +1,9 @@
 package model;
 
-import util.InputListener;
-import util.Vector2D;
-
 import java.util.ArrayList;
 import java.util.List;
 
+// Observes events and notifies listeners with event that has occurred
 public class EventObserver {
     private final List<EventListener> listeners = new ArrayList<>();
 

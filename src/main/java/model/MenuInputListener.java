@@ -39,6 +39,7 @@ public class MenuInputListener implements InputListener {
         return backspacePressed;
     }
 
+    // This method checks for if buttons are pressed, as in one full down and up button press
     public void updatePressedStates() {
         if (spacePressed) spacePressed = false;
         if (backspacePressed) backspacePressed = false;
@@ -61,6 +62,7 @@ public class MenuInputListener implements InputListener {
         }
     }
 
+    // Prevents inputs from instantly happening, used to prevent level beaten menu from instantly disappearing
     public void resetPressedStates() {
         lockSpace = spaceDown;
         lockBackspace = backspaceDown;

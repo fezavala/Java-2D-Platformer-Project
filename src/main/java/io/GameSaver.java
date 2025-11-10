@@ -2,14 +2,13 @@ package io;
 
 import org.json.JSONObject;
 
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+// Class that Saves the games current progress
 public class GameSaver {
-    private static final String SAVE_FILE_NAME = "save_data.json";
     private static final String SAVE_PATH = "assets/saves/save_data.json";
 
     public static void saveGame(JSONObject levelSaveData) {

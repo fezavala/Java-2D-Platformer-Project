@@ -67,6 +67,7 @@ public class Player extends MovingObject implements InputListener {
         }
     }
 
+    // Constantly apply gravity and handle jump press
     private void handleVerticalVelocity() {
         velocity.y += GRAVITY;
         if (onGround && jumpPressed) {
@@ -74,6 +75,7 @@ public class Player extends MovingObject implements InputListener {
         }
     }
 
+    // Main method for collision detection, x and y movement is separated and processed separately
     private void moveAndCollide(TileMap tileMap) {
         // Handling one movement axis at a time
         // x-axis:
@@ -179,7 +181,7 @@ public class Player extends MovingObject implements InputListener {
         }
     }
 
-    // This method should be called after move, so onGround can be true
+    // This method is called after move, so onGround can be true and useful
     public PlayerState getCurrentPlayerState() {
         if (disabled || dead) return PlayerState.DEATH;
         if (!onGround) {

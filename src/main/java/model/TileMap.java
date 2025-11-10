@@ -26,12 +26,12 @@ public class TileMap {
     private static final Vector2D RIGHT_SPIKE_OFFSET = new Vector2D(15, 0);
     private static final int SPIKE_HITBOX_SIZE = 18;
 
+    // Smaller hitbox for collectibles as well
     private static final int COLLECTIBLE_HITBOX_SIZE = 20;
     private static final Vector2D COLLECTIBLE_OFFSET = new Vector2D(7, 7);
 
     private final int tileSize;
     private final HashMap<Vector2D, Tile> interactableTiles;  // Tiles that the player interacts with
-    private HashMap<Vector2D, Tile> backgroundTiles;  // Tiles that the player ignores
     private final Stack<Vector2D> currentlyDisabledTiles = new Stack<>();  // If a tile is disabled, it's position is store here to re-enable the tile later
 
     public TileMap(String mapName, int tileSize) {
@@ -39,7 +39,7 @@ public class TileMap {
         this.interactableTiles =  loadTileMap(mapName);
     }
 
-    // Loads a map from the given mapName
+    // Loads a map from the given mapName from a JSONObject
     private HashMap<Vector2D, Tile> loadTileMap(String mapName) {
         // Grab JSON object from MapLoader
         JSONObject mapObject = MapLoader.loadMapJSON(mapName);
@@ -161,7 +161,7 @@ public class TileMap {
 
         private final TileType type;
         private final TileOrientation orientation;
-        private boolean disabled = false;
+        private boolean disabled;
 
         public Tile(Vector2D worldPosition, Vector2D hitboxOffset, int width, int height, TileType type, TileOrientation orientation, boolean disabled) {
             this.worldPosition = worldPosition;

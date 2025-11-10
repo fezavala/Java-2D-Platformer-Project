@@ -1,5 +1,6 @@
 package model;
 
+// Interface for classes that listen to game events
 public interface EventListener {
-    public void processEvent(GameEvent gameEvent);
+    void processEvent(GameEvent gameEvent);
 }

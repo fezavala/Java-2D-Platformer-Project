@@ -1,7 +1,6 @@
 package util;
 
-// Simple 2D vector class used to track positions and sizes
-
+// Simple but incredibly useful 2D vector class used to track positions, velocity, and sizes
 import java.util.Objects;
 
 public class Vector2D {
@@ -10,8 +9,8 @@ public class Vector2D {
     public double y;
 
     public Vector2D() {
-        x = 0;
-        y = 0;
+        this.x = 0;
+        this.y = 0;
     }
 
     public Vector2D(double x, double y) {
@@ -20,8 +19,8 @@ public class Vector2D {
     }
 
     public Vector2D(Vector2D v) {
-        x = v.x;
-        y = v.y;
+        this.x = v.x;
+        this.y = v.y;
     }
 
     public Vector2D add(Vector2D v) {

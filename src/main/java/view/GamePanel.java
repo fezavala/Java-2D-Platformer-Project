@@ -11,11 +11,12 @@ import java.awt.image.BufferedImage;
 import java.util.HashMap;
 
 // The GamePanel class draws images onto the screen based on the GameManagers state
+// Draws the player, tiles, and menus
 
-// The screen is
+// NOTE: This class is essentially an all-in-one class for rendering, with the HUD as an exception
 public class GamePanel extends JPanel {
 
-    // Screen Constants
+    // Screen and Rendering Constants
     private static final int SCREEN_WIDTH = 1856;
     private static final int SCREEN_HEIGHT = 960;
     private static final int SCALE = 2;
@@ -44,8 +45,10 @@ public class GamePanel extends JPanel {
     private static final String COLLECTIBLE_TILE_PATH = TILE_PATH + "collectible/";
     private static final String JAVA_LOGO_PATH = IMAGE_PATH + "java_logo.png";
 
+    // GameManager is stored for ease of access of the games current state
     private GameManager gameManager;
 
+    // HashMap that stores all the tile images based on their orientation and type
     private final HashMap<TileType, HashMap<TileOrientation, ImageProvider>> tileSprites = new HashMap<>();
 
     private final HashMap<PlayerState, ImageProvider> playerImages = new HashMap<>();
@@ -54,8 +57,6 @@ public class GamePanel extends JPanel {
     private boolean playerFlipped = false;
 
     private SpriteAnimation collectibleAnimation;
-
-    private TileMap.Tile[] screenTiles;
 
     private int spriteSize;
 
@@ -71,7 +72,7 @@ public class GamePanel extends JPanel {
     private static final double MAX_CIRCLE_TRANSITION_PROGRESS = 35;
 
     private final GameHUD gameHUD;
-    
+
     public GamePanel() {
         loadPlayerSprites();
         loadTileSprites();
@@ -90,10 +91,6 @@ public class GamePanel extends JPanel {
         this.spriteSize = gameManager.getTileSize();
     }
 
-    public void provideTilePositions(TileMap.Tile[] screenTiles) {
-        this.screenTiles = screenTiles;
-    }
-
     private void createImageFlipper() {
         AffineTransform transform = new AffineTransform();
         transform.translate(PLAYER_IMAGE_WIDTH, 0);
@@ -101,7 +98,6 @@ public class GamePanel extends JPanel {
         playerImageFlipper = new AffineTransformOp(transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
     }
 
-    // NOTE: Temporary implementation and location
     private void loadPlayerSprites() {
         for (PlayerState c : PlayerState.values()) {
             //Loading 4 idle sprites
@@ -189,18 +185,47 @@ public class GamePanel extends JPanel {
         }
     }
 
+    // Renders tiles that are visible on screen
     private void renderTiles(Graphics2D g2d, Vector2D cameraPosition) {
         // Grab tiles to be rendered:
-        // TODO: This method should prolly be local
-        provideTilePositions(gameManager.getVisibleTiles(cameraPosition, RENDER_SIZE));
+        TileMap.Tile[] visibleTiles = gameManager.getVisibleTiles(cameraPosition, RENDER_SIZE);
         // Render each tile depending on what type of tile it is
-        for (TileMap.Tile tile : screenTiles) {
+        for (TileMap.Tile tile : visibleTiles) {
             if (tile == null) continue;
             BufferedImage tileImage = tileSprites.get(tile.getType()).get(tile.getOrientation()).getActiveImage();
             Vector2D tilePos = tile.getWorldPosition();
-            g2d.drawImage(tileImage, (int)(tilePos.x - cameraPosition.x), (int)(tilePos.y - cameraPosition.y), spriteSize, spriteSize, null);
+            g2d.drawImage(tileImage, (int) (tilePos.x - cameraPosition.x), (int) (tilePos.y - cameraPosition.y), spriteSize, spriteSize, null);
         }
     }
+
+    // Handles the state of the level transition animation
+    private void handleLevelTransition(Graphics2D g2) {
+        // Start level transition
+        if (gameManager.getGameState() == GameState.LEVEL_TRANSITION && circleTransitionAnimationComplete) {
+            circleTransitionAnimationComplete = false;
+            circleTransitionAnimationProgress = 0;
+            flipCircleTransitionProgress = false;
+        }
+
+        // Process circleTransitionAnimation
+        if (!circleTransitionAnimationComplete) {
+            circleTransitionAnimation(g2);
+        }
+
+        // Check for the animations state
+        if (flipCircleTransitionProgress) {
+            circleTransitionAnimationProgress = Math.max(0, circleTransitionAnimationProgress - CIRCLE_TRANSITION_ANIMATION_PROGRESS_PER_FRAME);
+        } else {
+            circleTransitionAnimationProgress = Math.min(1, circleTransitionAnimationProgress + CIRCLE_TRANSITION_ANIMATION_PROGRESS_PER_FRAME);
+        }
+        if (circleTransitionAnimationProgress >= 1) {
+            flipCircleTransitionProgress = true;
+        }
+        if (circleTransitionAnimationProgress <= 0) {
+            circleTransitionAnimationComplete = true;
+        }
+    }
+
 
     private void renderPlayer(Graphics2D g2d, Vector2D cameraPosition, PlayerState currentPlayerState) {
         // Check and change currently player visual
@@ -239,8 +264,8 @@ public class GamePanel extends JPanel {
         // Render the player
         // Player images are 33x32 for some reason, so the width offset is applied to manage this
         g2d.drawImage(currentPlayerImage,
-                (int)(playerScreenPosition.x),
-                (int)(playerScreenPosition.y),
+                (int) (playerScreenPosition.x),
+                (int) (playerScreenPosition.y),
                 PLAYER_SCALE * (spriteSize) + PLAYER_SPRITE_WIDTH_OFFSET,
                 PLAYER_SCALE * spriteSize,
                 null);
@@ -252,15 +277,26 @@ public class GamePanel extends JPanel {
         double progressSize = Math.pow(MAX_CIRCLE_TRANSITION_PROGRESS * circleTransitionAnimationProgress, 2);
         double xValue = (RENDER_SIZE.x / 2) - progressSize / 2;
         double yValue = (RENDER_SIZE.y / 2) - progressSize / 2;
-        g2d.fillOval((int)xValue, (int)yValue, (int)progressSize, (int)progressSize);
+        g2d.fillOval((int) xValue, (int) yValue, (int) progressSize, (int) progressSize);
     }
 
+    // Called from GamePanel.repaint() 60 times per second to render everything visible on screen
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        Graphics2D g2 = (Graphics2D)g;
+        Graphics2D g2 = (Graphics2D) g;
         g2.scale(SCALE, SCALE);  // Scale the game up to make it fill out the screen
+
+        collectibleAnimation.updateAnimation();
+
+        // If in the main menu, do not process anything else
+        if (gameManager.getGameState() == GameState.MAIN_MENU || !gameManager.getTileMapActive()) {
+            gameHUD.drawMainMenu(g2);
+            handleLevelTransition(g2);
+            g2.dispose();
+            return;
+        }
 
         // Update camera based on players position and state
         PlayerState currentPlayerState = gameManager.getPlayerState();
@@ -270,56 +306,31 @@ public class GamePanel extends JPanel {
         cameraPosition.x += (usePosition.x - RENDER_SIZE.x / 2 - cameraPosition.x) / CAMERA_DRAG;
         cameraPosition.y += (usePosition.y - RENDER_SIZE.y / 2 - cameraPosition.y) / CAMERA_DRAG;
         // Prevents sprite jitter at the expense of camera smoothness:
-        Vector2D pixelAlignedCameraPosition = new Vector2D((int)cameraPosition.x, (int)cameraPosition.y);
-
-        collectibleAnimation.updateAnimation();
+        Vector2D pixelAlignedCameraPosition = new Vector2D((int) cameraPosition.x, (int) cameraPosition.y);
 
         // The main rendering order:
         // Order matters, whatever is rendered first will be overwritten by whatever is rendered on top of it
         renderTiles(g2, pixelAlignedCameraPosition);
         renderPlayer(g2, pixelAlignedCameraPosition, currentPlayerState);
-        if (gameManager.getGameState() == GameState.IN_LEVEL) {
-            gameHUD.drawGameHUD(g2, gameManager.getCollectibleAmount(), gameManager.getLevelTime());
-        }
-        if (gameManager.getGameState() == GameState.LEVEL_FINISHED) {
-            gameHUD.drawLevelCompleteMenu(g2,
-                    gameManager.getCurrentLevel(),
-                    gameManager.getCollectibleAmount(),
-                    gameManager.getLevelTime(),
-                    gameManager.getSavedLevelCollectibleCount(),
-                    gameManager.getSavedLevelTime(),
-                    gameManager.isLevelCollectibleRecord(),
-                    gameManager.isLevelTimeRecord());
+        // Render appropriate UI depending on the game state
+        switch (gameManager.getGameState()) {
+            case IN_LEVEL:
+                gameHUD.drawGameHUD(g2, gameManager.getCollectibleAmount(), gameManager.getLevelTime());
+                break;
+            case LEVEL_FINISHED:
+                gameHUD.drawLevelCompleteMenu(g2,
+                        gameManager.getCurrentLevel(),
+                        gameManager.getCollectibleAmount(),
+                        gameManager.getLevelTime(),
+                        gameManager.getSavedLevelCollectibleCount(),
+                        gameManager.getSavedLevelTime(),
+                        gameManager.isLevelCollectibleRecord(),
+                        gameManager.isLevelTimeRecord());
+                break;
         }
         handleLevelTransition(g2);
 
         g2.dispose();  // Once drawing is done, release the resources it uses
     }
-
-    private void handleLevelTransition(Graphics2D g2) {
-        // Start level transition
-        if (gameManager.getGameState() == GameState.LEVEL_TRANSITION && circleTransitionAnimationComplete) {
-            circleTransitionAnimationComplete = false;
-            circleTransitionAnimationProgress = 0;
-            flipCircleTransitionProgress = false;
-        }
-
-        // Process circleTransitionAnimation
-        if (!circleTransitionAnimationComplete) {
-            circleTransitionAnimation(g2);
-        }
-
-        // Check for the animations state
-        if (flipCircleTransitionProgress) {
-            circleTransitionAnimationProgress = Math.max(0, circleTransitionAnimationProgress - CIRCLE_TRANSITION_ANIMATION_PROGRESS_PER_FRAME);
-        } else {
-            circleTransitionAnimationProgress = Math.min(1, circleTransitionAnimationProgress + CIRCLE_TRANSITION_ANIMATION_PROGRESS_PER_FRAME);
-        }
-        if (circleTransitionAnimationProgress >= 1) {
-            flipCircleTransitionProgress = true;
-        }
-        if (circleTransitionAnimationProgress <= 0) {
-            circleTransitionAnimationComplete = true;
-        }
-    }
 }
+

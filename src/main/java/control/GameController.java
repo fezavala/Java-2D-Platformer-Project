@@ -4,8 +4,6 @@ import model.GameManager;
 import view.GamePanel;
 import view.GameWindow;
 
-import javax.swing.*;
-
 // Class that runs the main game loop thread, updates physics and view
 public class GameController implements Runnable {
 
@@ -35,7 +33,7 @@ public class GameController implements Runnable {
         double deltaTime = 0;
         long lastTime = System.nanoTime();
         long currentTime;
-        long timer = 0;  //
+        long timer = 0;
         int drawCount = 0;
 
         while(gameThread != null) {

@@ -1,5 +1,6 @@
 package model;
 
+// Enum denoting the different types of tiles in the game
 public enum TileType {
     GROUND, HAZARD, GOAL, COLLECTIBLE;
 

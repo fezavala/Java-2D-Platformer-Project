@@ -14,7 +14,6 @@ import java.awt.font.TextLayout;
 // - Final level time and its high score for the current level
 // - New record yellow text if applicable
 
-
 // NOTE: I do not know if this is true or not, but using a thread for this game
 // prevents JLabels from working properly, so instead this class is made
 // which uses Graphics2D capabilities to mimic JLabel behavior. I could not get
@@ -53,19 +52,30 @@ public class GameHUD {
     private static final String PLATFORMER_TEXT = "2D Platformer";
     private static final String PLAY_TEXT = "Press Space to play!";
     private static final String CONTROL_TEXT = "Controls:";
-    private static final String WASD_MOVE_TEXT = "WASD or Arrow Keys: Move";
+    private static final String MOVEMENT_TEXT = "AD or ←→: Move";
     private static final String JUMP_TEXT = "Space: Jump";
     private static final Vector2D JAVA_LOGO_SIZE = new Vector2D(120, 235);
     private static final Vector2D JAVA_LOGO_POSITION = new Vector2D(12 * HUD_RENDER_UNIT + 16, HUD_RENDER_UNIT);
     private static final Vector2D TITLE_TEXT_POSITION = new Vector2D(11 * HUD_RENDER_UNIT + 8, 9 * HUD_RENDER_UNIT + 16);
-
+    private static final Vector2D PLAY_TEXT_POSITION = new Vector2D(-2 * HUD_RENDER_UNIT + 20, 3 * HUD_RENDER_UNIT);
+    private static final Vector2D CONTROL_TEXT_POSITION = new Vector2D(3 * HUD_RENDER_UNIT, 6 * HUD_RENDER_UNIT);
+    private static final Vector2D MOVEMENT_TEXT_POSITION = new Vector2D(-2 * HUD_RENDER_UNIT, 1.5 * HUD_RENDER_UNIT);
+    private static final Vector2D JUMP_TEXT_POSITION = new Vector2D(HUD_RENDER_UNIT, 1.5 * HUD_RENDER_UNIT);
+    private static final Vector2D[] MENU_COIN_POSITIONS = new Vector2D[] {
+            new Vector2D(HUD_RENDER_UNIT, HUD_RENDER_UNIT),
+            new Vector2D(26 * HUD_RENDER_UNIT, HUD_RENDER_UNIT),
+            new Vector2D(HUD_RENDER_UNIT, 12 *HUD_RENDER_UNIT),
+            new Vector2D(26 *HUD_RENDER_UNIT, 12 * HUD_RENDER_UNIT),
+    };
 
     // Timer static variables
     private static final double MILLI_TO_SECOND = 1000;
     private static final double SECOND_TO_MINUTE = 60;
 
+    // Sprites to render
     private final ImageProvider collectibleSprite;
     private final ImageProvider javaLogoSprite;
+
 
     public GameHUD(ImageProvider collectibleSprite, ImageProvider javaLogoSprite) {
         this.collectibleSprite = collectibleSprite;
@@ -94,6 +104,15 @@ public class GameHUD {
         g2d.setColor(Color.WHITE);
         g2d.fill(textShape);
     }
+
+    private void resetDrawingPosition(Graphics2D g2d, Vector2D... positions) {
+        for (Vector2D position : positions) {
+            g2d.translate(-position.x, -position.y);
+        }
+    }
+
+    // Menus and HUDs
+    // NOTE: Shapes are created every frame, which I find is not efficient for rendering, but will do for this project.
 
     // Draws the in game hud, with a collectible counter on the top-left and a timer on the top-right
     public void drawGameHUD(Graphics2D g2d, int collectibleCount, double timerCount) {
@@ -125,14 +144,10 @@ public class GameHUD {
         drawTextShape(g2d, timerOutline, Color.DARK_GRAY, TIMER_POSITION);
 
         // Resetting g2d position for cleanup
-        g2d.translate(-COLLECTIBLE_TEXT_OFFSET.x, -COLLECTIBLE_TEXT_OFFSET.y);
-        g2d.translate(-TIMER_POSITION.x, -TIMER_POSITION.y);
-
-        drawMainMenu(g2d);
+        resetDrawingPosition(g2d, COLLECTIBLE_TEXT_OFFSET, TIMER_POSITION);
     }
 
     // Draws the Level Complete menu
-    // NOTE: Shapes are created every frame, which is not efficient for rendering
     public void drawLevelCompleteMenu(Graphics2D g2d, int currentLevel, int collectibleCount, double timerCount, int savedCollectibleCount, double savedTimerCount, boolean collectibleRecord, boolean timeRecord) {
         String collectibleText = String.valueOf(collectibleCount);
         String timerText = "Time: " + formatLevelTime(timerCount);
@@ -188,19 +203,25 @@ public class GameHUD {
         drawTextShape(g2d, secondActionOutline, Color.BLACK, SECOND_ACTION_TEXT_POSITION);
 
         // Resetting g2d position for cleanup
-        g2d.translate(-LEVEL_COMPLETE_TEXT_POSITION.x, -LEVEL_COMPLETE_TEXT_POSITION.y);
-        g2d.translate(-MENU_COLLECTIBLE_TEXT_POSITION.x, -MENU_COLLECTIBLE_TEXT_POSITION.y);
-        g2d.translate(-FIRST_RECORD_TEXT_POSITION.x, -FIRST_RECORD_TEXT_POSITION.y);
-        g2d.translate(-MENU_TIME_TEXT_POSITION.x, -MENU_TIME_TEXT_POSITION.y);
-        g2d.translate(-SECOND_RECORD_TEXT_POSITION.x, -SECOND_RECORD_TEXT_POSITION.y);
-        g2d.translate(-FIRST_ACTION_TEXT_POSITION.x, -FIRST_ACTION_TEXT_POSITION.y);
-        g2d.translate(-SECOND_ACTION_TEXT_POSITION.x, -SECOND_ACTION_TEXT_POSITION.y);
+        resetDrawingPosition(g2d, LEVEL_COMPLETE_TEXT_POSITION,
+                MENU_COLLECTIBLE_TEXT_POSITION,
+                FIRST_RECORD_TEXT_POSITION,
+                SECOND_RECORD_TEXT_POSITION,
+                MENU_TIME_TEXT_POSITION,
+                FIRST_ACTION_TEXT_POSITION,
+                SECOND_ACTION_TEXT_POSITION);
     }
 
     public void drawMainMenu(Graphics2D g2d) {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        Shape titleText = createTextShapeFromText(g2d, PLATFORMER_TEXT);
 
+        Shape titleText = createTextShapeFromText(g2d, PLATFORMER_TEXT);
+        Shape playText = createTextShapeFromText(g2d, PLAY_TEXT);
+        Shape controlText = createTextShapeFromText(g2d, CONTROL_TEXT);
+        Shape movementText = createTextShapeFromText(g2d, MOVEMENT_TEXT);
+        Shape jumpText = createTextShapeFromText(g2d, JUMP_TEXT);
+
+        // Drawing java logo
         g2d.drawImage(javaLogoSprite.getActiveImage(),
                 (int)JAVA_LOGO_POSITION.x,
                 (int)JAVA_LOGO_POSITION.y,
@@ -208,9 +229,34 @@ public class GameHUD {
                 (int)JAVA_LOGO_SIZE.y,
                 null);
 
+        // Drawing 4 coin sprites:
+        for (Vector2D coinPosition : MENU_COIN_POSITIONS) {
+            g2d.drawImage(collectibleSprite.getActiveImage(),
+                    (int)coinPosition.x,
+                    (int)coinPosition.y,
+                    HUD_RENDER_UNIT * HUD_SPRITE_MULTIPLIER,
+                    HUD_RENDER_UNIT * HUD_SPRITE_MULTIPLIER,
+                    null);
+        }
+
+
         g2d.setStroke(FONT_OUTLINE_SIZE);
 
+        // Drawing title text
         drawTextShape(g2d, titleText, Color.BLACK, TITLE_TEXT_POSITION);
 
+        // Drawing space to play text
+        drawTextShape(g2d, playText, Color.BLACK, PLAY_TEXT_POSITION);
+
+        // Resetting g2d position
+        resetDrawingPosition(g2d, TITLE_TEXT_POSITION, PLAY_TEXT_POSITION);
+
+        // Drawing Controls
+        drawTextShape(g2d, controlText, Color.BLACK, CONTROL_TEXT_POSITION);
+        drawTextShape(g2d, movementText, Color.BLACK, MOVEMENT_TEXT_POSITION);
+        drawTextShape(g2d, jumpText, Color.BLACK, JUMP_TEXT_POSITION);
+
+        // Resetting g2d position for cleanup
+        resetDrawingPosition(g2d, CONTROL_TEXT_POSITION, MOVEMENT_TEXT_POSITION, JUMP_TEXT_POSITION);
     }
 }

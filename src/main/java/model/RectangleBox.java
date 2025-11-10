@@ -1,8 +1,8 @@
 package model;
 
-
 import util.Vector2D;
 
+// AABB class
 // This class is never updated live, it is simply instantiated on the spot for use wherever needed.
 public class RectangleBox {
     private final Vector2D worldPosition;
@@ -56,27 +56,3 @@ public class RectangleBox {
                 worldPosition.y + height > box.worldPosition.y;
     }
 }
-
-//        Old Collision Detection System
-//
-//        if frame_movement[0]:
-//            self.pos[0] += frame_movement[0] * self.game.dt
-//            entity_hitbox = self.rect()
-//            for rect in tilemap.physics_rects_around(self.pos, max(self.size)):
-//                if entity_hitbox.colliderect(rect):
-//                    if frame_movement[0] > 0:
-//                    entity_hitbox.right = rect.left
-//                                if frame_movement[0] < 0:
-//                    entity_hitbox.left = rect.right
-//            self.pos[0] = entity_hitbox.x
-//
-//        if frame_movement[1]:
-//            self.pos[1] += frame_movement[1] * self.game.dt
-//            entity_hitbox = self.rect()
-//                for rect in tilemap.physics_rects_around(self.pos, max(self.size)):
-//            if entity_hitbox.colliderect(rect):
-//            if frame_movement[1] > 0:
-//            entity_hitbox.bottom = rect.top
-//                        if frame_movement[1] < 0:
-//            entity_hitbox.top = rect.bottom
-//            self.pos[1] = entity_hitbox.y

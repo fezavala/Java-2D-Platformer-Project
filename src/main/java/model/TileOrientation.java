@@ -1,5 +1,6 @@
 package model;
 
+// Enum for the orientation of a tile, used to determine hitbox positions and what tile variant to render on-screen
 public enum TileOrientation {
     TOP_LEFT, TOP, TOP_RIGHT, LEFT, CENTER, RIGHT, BOTTOM_LEFT, BOTTOM, BOTTOM_RIGHT;
 
